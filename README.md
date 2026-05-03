@@ -193,8 +193,3 @@ scipy
 - **数据库：** SQLite
 - **前端：** 原生 HTML / CSS / JS
 
-## 许可证
-
-MIT
-# PhotoEfas
-
