@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}我的记录{% endblock %}
+
+{% block content %}
+<h1>我的记录</h1>
+
+{% if pagination.items %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>水印文本</th>
+            <th>状态</th>
+            <th>时间</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in pagination.items %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.watermark_text }}</td>
+            <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+            <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}" class="btn btn-sm">上一页</a>
+    {% endif %}
+    <span>第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}" class="btn btn-sm">下一页</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>暂无记录</p>
+</div>
+{% endif %}
+{% endblock %}

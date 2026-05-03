@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}管理员控制台{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>管理员控制台</h1>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_records }}</div>
+            <div class="stat-label">水印记录</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">注册用户</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_keys }}</div>
+            <div class="stat-label">密钥对</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ upload_size }}</div>
+            <div class="stat-label">上传目录</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ output_size }}</div>
+            <div class="stat-label">输出目录</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>快速操作</h2>
+        <div class="action-buttons">
+            <form method="POST" action="{{ url_for('admin.generate_keys') }}" style="display:inline;">
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Generate new SM2+RSA key pair?')">
+                    生成密钥对
+                </button>
+            </form>
+            <a href="{{ url_for('admin.embed_watermark') }}" class="btn btn-success">嵌入水印</a>
+            <a href="{{ url_for('admin.verify_image') }}" class="btn btn-info">验证图片</a>
+            <form method="POST" action="{{ url_for('admin.cleanup_files') }}" style="display:inline;">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Clean up orphan and expired (>24h) files?')">
+                    清理过期文件
+                </button>
+            </form>
+            {% if recent_records %}
+            <form method="POST" action="{{ url_for('admin.clear_all_records') }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Delete ALL records and files? Cannot undo.')">
+                    清空所有记录
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if recent_records %}
+    <div class="section">
+        <h2>最近记录</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>水印文本</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in recent_records %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.watermark_text[:30] }}{% if r.watermark_text|length > 30 %}...{% endif %}</td>
+                    <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+                    <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.delete_record', record_id=r.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete record #{{ r.id }}?')">删除</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

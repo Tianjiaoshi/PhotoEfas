@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+venv/
+instance/
+uploads/
+outputs/
+keys/
+*.db
+.secret_key
+.env

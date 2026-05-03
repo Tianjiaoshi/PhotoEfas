@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}嵌入水印{% endblock %}
+
+{% block content %}
+<h1>嵌入水印</h1>
+
+<div class="two-column">
+    <div class="form-panel">
+        <form method="POST" enctype="multipart/form-data" id="embedForm">
+            <div class="form-group">
+                <label for="image">选择图片</label>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/bmp" required>
+                    <p>点击或拖拽图片到此处</p>
+                </div>
+                <div id="preview" class="preview-container" style="display:none;">
+                    <img id="previewImg" src="" alt="预览">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="watermark_text">水印文本（最多64字符）</label>
+                <input type="text" id="watermark_text" name="watermark_text" maxlength="64" required
+                       placeholder="如: ©2026 PhotoEfas">
+            </div>
+
+            <div class="form-group">
+                <label for="key_pair_id">密钥对</label>
+                <select id="key_pair_id" name="key_pair_id">
+                    {% for kp in key_pairs %}
+                    <option value="{{ kp.id }}">密钥对 #{{ kp.id }} ({{ kp.created_at.strftime('%Y-%m-%d') }})</option>
+                    {% endfor %}
+                </select>
+                {% if not key_pairs %}
+                <p class="help-text">请先<a href="{{ url_for('admin.key_management') }}">生成密钥对</a></p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="alpha">嵌入强度: <span id="alphaValue">0.35</span></label>
+                <input type="range" id="alpha" name="alpha" min="0.1" max="0.8" step="0.05" value="0.35">
+                <p class="help-text">值越大越抗压缩，但可能影响画质</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" {% if not key_pairs %}disabled{% endif %}>
+                嵌入水印
+            </button>
+        </form>
+    </div>
+
+    <div class="result-panel">
+        {% if result %}
+            {% if result.success %}
+            <div class="result-success">
+                <h3>嵌入成功</h3>
+                <ul>
+                    <li>图片哈希: <code>{{ result.image_hash[:16] }}...</code></li>
+                    <li>容量: {{ result.capacity }} 比特</li>
+                    <li>Payload大小: {{ result.payload_size }} 字节</li>
+                    <li>总嵌入比特: {{ result.total_bits }}</li>
+                    <li><strong>嵌入强度(Alpha): {{ alpha }}</strong> <span class="help-text">（验证时必须使用相同值）</span></li>
+                </ul>
+                {% if record %}
+                <a href="{{ url_for('admin.download', record_id=record.id) }}" class="btn btn-success">
+                    下载水印图片
+                </a>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="result-error">
+                <h3>嵌入失败</h3>
+                <p>{{ result.error }}</p>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="result-empty">
+            <p>上传图片并填写水印信息后点击"嵌入水印"</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Alpha滑块实时显示
+    const alphaSlider = document.getElementById('alpha');
+    const alphaValue = document.getElementById('alphaValue');
+    alphaSlider.addEventListener('input', () => alphaValue.textContent = alphaSlider.value);
+
+    // 拖拽上传
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('image');
+    const preview = document.getElementById('preview');
+    const previewImg = document.getElementById('previewImg');
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            showPreview(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) showPreview(fileInput.files[0]);
+    });
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
+{% endblock %}

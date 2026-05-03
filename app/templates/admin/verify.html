@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}验证图片{% endblock %}
+
+{% block content %}
+<h1>验证图片</h1>
+
+<div class="two-column">
+    <div class="form-panel">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="image">选择待验证图片</label>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/bmp" required>
+                    <p>点击或拖拽图片到此处</p>
+                </div>
+                <div id="preview" class="preview-container" style="display:none;">
+                    <img id="previewImg" src="" alt="预览">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="key_pair_id">密钥对</label>
+                <select id="key_pair_id" name="key_pair_id">
+                    {% for kp in key_pairs %}
+                    <option value="{{ kp.id }}">密钥对 #{{ kp.id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="alpha">嵌入强度 (Alpha)</label>
+                <input type="number" id="alpha" name="alpha" value="0.35" step="0.05" min="0.1" max="0.8">
+                <p class="help-text">必须与嵌入时使用的Alpha值一致，可在"水印记录"页面查看</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">验证</button>
+        </form>
+    </div>
+
+    <div class="result-panel">
+        {% if result %}
+            {% if result.valid %}
+            <div class="result-success">
+                <h3>验证通过</h3>
+                <div class="verification-badge badge-valid">水印有效</div>
+                <ul>
+                    <li>水印文本: <strong>{{ result.watermark_text }}</strong></li>
+                    <li>用户ID: {{ result.user_id }}</li>
+                    <li>嵌入时间: {{ result.timestamp }}</li>
+                    <li>签名验证: <span class="badge badge-valid">通过</span></li>
+                    <li>原始哈希: <code>{{ result.original_hash[:16] }}...</code></li>
+                </ul>
+            </div>
+            {% elif result.error %}
+            <div class="result-error">
+                <h3>验证失败</h3>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="result-warning">
+                <h3>验证未通过</h3>
+                <div class="verification-badge badge-invalid">水印无效或图片未嵌入水印</div>
+                <ul>
+                    <li>签名验证: <span class="badge badge-invalid">失败</span></li>
+                    {% if result.watermark_text %}
+                    <li>提取的水印: {{ result.watermark_text }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="result-empty">
+            <p>上传图片后点击"验证"</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('image');
+    const preview = document.getElementById('preview');
+    const previewImg = document.getElementById('previewImg');
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            showPreview(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) showPreview(fileInput.files[0]);
+    });
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => { previewImg.src = e.target.result; preview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+    }
+</script>
+{% endblock %}

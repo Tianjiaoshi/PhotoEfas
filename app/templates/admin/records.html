@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}水印记录{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>水印记录</h1>
+    {% if pagination.items %}
+    <form method="POST" action="{{ url_for('admin.clear_all_records') }}">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete ALL records and files? Cannot undo.')">
+            清空所有记录
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+{% if pagination.items %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>水印文本</th>
+            <th>图片哈希</th>
+            <th>Alpha</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in pagination.items %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.watermark_text[:30] }}</td>
+            <td><code>{{ r.image_hash[:12] }}...</code></td>
+            <td>{{ (r.embed_params|from_json).get('alpha', '-') }}</td>
+            <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+            <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+                {% if r.watermarked_image_path %}
+                <a href="{{ url_for('admin.download', record_id=r.id) }}" class="btn btn-sm">下载</a>
+                {% endif %}
+                <form method="POST" action="{{ url_for('admin.delete_record', record_id=r.id) }}" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete record #{{ r.id }} and its files?')">删除</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}" class="btn btn-sm">上一页</a>
+    {% endif %}
+    <span>第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}" class="btn btn-sm">下一页</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>暂无记录</p>
+</div>
+{% endif %}
+{% endblock %}

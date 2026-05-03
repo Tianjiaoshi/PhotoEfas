@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}邀请码管理{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>邀请码管理</h1>
+</div>
+
+<div class="section">
+    <h2>生成邀请码</h2>
+    <form method="POST" action="{{ url_for('admin.generate_invite_code') }}" class="inline-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="count">数量</label>
+                <input type="number" id="count" name="count" value="1" min="1" max="50">
+            </div>
+            <div class="form-group">
+                <label for="max_uses">每个可用次数</label>
+                <input type="number" id="max_uses" name="max_uses" value="1" min="1" max="100">
+            </div>
+            <div class="form-group" style="align-self:flex-end;">
+                <button type="submit" class="btn btn-primary">生成</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if codes %}
+<div class="section">
+    <h2>邀请码列表 ({{ codes|length }})</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>邀请码</th>
+                <th>使用/上限</th>
+                <th>状态</th>
+                <th>使用者</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in codes %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td><code class="invite-code" data-code="{{ c.code }}" onclick="navigator.clipboard.writeText(this.dataset.code); this.textContent='Copied!'; setTimeout(()=>this.textContent=this.dataset.code.substring(0,16)+'...',1500)">{{ c.code[:16] }}...</code></td>
+                <td>{{ c.use_count }} / {{ c.max_uses }}</td>
+                <td>
+                    {% if c.is_valid %}
+                        <span class="badge badge-active">可用</span>
+                    {% elif not c.is_active %}
+                        <span class="badge badge-invalid">已禁用</span>
+                    {% else %}
+                        <span class="badge badge-used">已用完</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if c.user %}
+                        {{ c.user.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin.toggle_invite_code', code_id=c.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm">
+                            {{ '禁用' if c.is_active else '启用' }}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.delete_invite_code', code_id=c.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete?')">删除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>暂无邀请码，请先生成。</p>
+</div>
+{% endif %}
+{% endblock %}

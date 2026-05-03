@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PhotoEfas{% endblock %} - 图片隐形水印系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">PhotoEfas</a>
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin.dashboard') }}">控制台</a>
+                        <a href="{{ url_for('admin.key_management') }}">密钥管理</a>
+                        <a href="{{ url_for('admin.embed_watermark') }}">嵌入水印</a>
+                        <a href="{{ url_for('admin.verify_image') }}">验证图片</a>
+                        <a href="{{ url_for('admin.invite_codes') }}">邀请码</a>
+                    {% else %}
+                        <a href="{{ url_for('user.dashboard') }}">控制台</a>
+                        <a href="{{ url_for('user.upload_key') }}">我的密钥</a>
+                        <a href="{{ url_for('user.verify') }}">验证图片</a>
+                    {% endif %}
+                    <span class="nav-user">{{ current_user.username }} ({{ '管理员' if current_user.is_admin else '用户' }})</span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn-logout">退出</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">登录</a>
+                    <a href="{{ url_for('auth.register') }}">注册</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>PhotoEfas v1.0 - SM2+RSA 混合加密图片隐形水印系统</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

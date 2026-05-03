@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}密钥管理{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>密钥管理</h1>
+    <form method="POST" action="{{ url_for('admin.generate_keys') }}">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('生成新的SM2+RSA密钥对？')">
+            生成新密钥对
+        </button>
+    </form>
+</div>
+
+<div class="info-box">
+    <p><strong>密钥分发说明：</strong>将 <em>RSA私钥</em> 和 <em>SM2公钥</em> 提供给用户，用于验证水印图片。</p>
+</div>
+
+{% if key_pairs %}
+<div class="key-list">
+    {% for kp in key_pairs %}
+    <div class="key-card">
+        <div class="key-header">
+            <span class="key-id">#{{ kp.id }}</span>
+            <span class="key-date">{{ kp.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </div>
+
+        <div class="key-detail">
+            <label>SM2公钥（提供给用户验签）:</label>
+            <div style="position:relative;">
+                <textarea readonly rows="2" style="width:100%;font-family:monospace;font-size:0.8rem;resize:none;" id="sm2pub-{{ kp.id }}">{{ kp.sm2_public_key }}</textarea>
+                <button type="button" class="btn btn-sm" style="position:absolute;top:4px;right:4px;" onclick="copyKey('sm2pub-{{ kp.id }}')">复制</button>
+            </div>
+        </div>
+
+        <div class="key-detail">
+            <label>SM2私钥（管理员留存，用于签名）:</label>
+            <div style="position:relative;">
+                <textarea readonly rows="2" style="width:100%;font-family:monospace;font-size:0.8rem;resize:none;" id="sm2priv-{{ kp.id }}">{{ kp.sm2_private_key_encrypted }}</textarea>
+                <button type="button" class="btn btn-sm" style="position:absolute;top:4px;right:4px;" onclick="copyKey('sm2priv-{{ kp.id }}')">复制</button>
+            </div>
+        </div>
+
+        <div class="key-detail">
+            <label>RSA公钥（管理员留存，用于加密）:</label>
+            <div style="position:relative;">
+                <textarea readonly rows="4" style="width:100%;font-family:monospace;font-size:0.8rem;resize:none;" id="rsapub-{{ kp.id }}">{{ kp.rsa_public_key }}</textarea>
+                <button type="button" class="btn btn-sm" style="position:absolute;top:4px;right:4px;" onclick="copyKey('rsapub-{{ kp.id }}')">复制</button>
+            </div>
+        </div>
+
+        <div class="key-detail">
+            <label>RSA私钥（提供给用户解密）:</label>
+            <div style="position:relative;">
+                <textarea readonly rows="4" style="width:100%;font-family:monospace;font-size:0.8rem;resize:none;" id="rsapriv-{{ kp.id }}">{{ kp.rsa_private_key_encrypted }}</textarea>
+                <button type="button" class="btn btn-sm" style="position:absolute;top:4px;right:4px;" onclick="copyKey('rsapriv-{{ kp.id }}')">复制</button>
+            </div>
+        </div>
+
+        <div class="key-actions">
+            <form method="POST" action="{{ url_for('admin.delete_key', key_id=kp.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('确定删除此密钥对？')">删除</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>暂无密钥对，请先生成。</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyKey(id) {
+    const el = document.getElementById(id);
+    navigator.clipboard.writeText(el.value).then(() => {
+        const btn = el.nextElementSibling;
+        const orig = btn.textContent;
+        btn.textContent = '已复制';
+        setTimeout(() => btn.textContent = orig, 1500);
+    });
+}
+</script>
+{% endblock %}

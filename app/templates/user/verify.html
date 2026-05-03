@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}验证图片{% endblock %}
+
+{% block content %}
+<h1>验证图片</h1>
+
+<div class="two-column">
+    <div class="form-panel">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="image">选择待验证图片</label>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/bmp" required>
+                    <p>点击或拖拽图片到此处</p>
+                </div>
+                <div id="preview" class="preview-container" style="display:none;">
+                    <img id="previewImg" src="" alt="预览">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="rsa_private_key">RSA私钥（可选，如已在"我的密钥"页面保存）</label>
+                <textarea id="rsa_private_key" name="rsa_private_key" rows="4"
+                          placeholder="粘贴RSA私钥PEM，或留空使用已保存的密钥"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="sm2_public_key">SM2公钥（可选）</label>
+                <textarea id="sm2_public_key" name="sm2_public_key" rows="2"
+                          placeholder="粘贴SM2公钥hex，或留空使用已保存的密钥"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="alpha">嵌入强度 (Alpha)</label>
+                <input type="number" id="alpha" name="alpha" value="0.35" step="0.05" min="0.1" max="0.8">
+                <p class="help-text">必须与嵌入时使用的Alpha值一致</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">验证</button>
+        </form>
+    </div>
+
+    <div class="result-panel">
+        {% if result %}
+            {% if result.valid %}
+            <div class="result-success">
+                <h3>验证通过</h3>
+                <div class="verification-badge badge-valid">水印有效</div>
+                <ul>
+                    <li>水印文本: <strong>{{ result.watermark_text }}</strong></li>
+                    <li>用户ID: {{ result.user_id }}</li>
+                    <li>嵌入时间: {{ result.timestamp }}</li>
+                    <li>签名: <span class="badge badge-valid">有效</span></li>
+                </ul>
+            </div>
+            {% elif result.error %}
+            <div class="result-error">
+                <h3>验证失败</h3>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="result-warning">
+                <h3>验证未通过</h3>
+                <div class="verification-badge badge-invalid">水印无效或图片未嵌入水印</div>
+                <ul>
+                    <li>签名: <span class="badge badge-invalid">失败</span></li>
+                </ul>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="result-empty">
+            <p>上传图片后点击"验证"</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('image');
+    const preview = document.getElementById('preview');
+    const previewImg = document.getElementById('previewImg');
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            showPreview(e.dataTransfer.files[0]);
+        }
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files.length) showPreview(fileInput.files[0]); });
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => { previewImg.src = e.target.result; preview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+    }
+</script>
+{% endblock %}
